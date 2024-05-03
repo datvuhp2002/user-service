@@ -1,21 +1,18 @@
 "use strict";
-
-const RoleModel = require("../models/role.models");
-
+const prisma = require("../prisma");
 class RoleService {
   static create = async ({ name }) => {
-    return await RoleModel.create({
-      name: name,
-    });
+    const role = await prisma.role.create({ data: { name } });
+    return role;
   };
   static getAll = async () => {
-    return RoleModel.find();
+    return prisma.role.findMany();
   };
   static findByName = async (name) => {
-    return await RoleModel.findOne({ name }).lean();
+    return await prisma.role.findFirst({ where: { name } });
   };
-  static findById = async (id) => {
-    return await RoleModel.findById({ _id: id });
+  static findById = async ({ id }) => {
+    return await prisma.role.findFirst({ where: { role_id: id } });
   };
 }
 module.exports = RoleService;

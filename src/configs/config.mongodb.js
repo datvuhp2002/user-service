@@ -7,19 +7,21 @@ const dev = {
   db: {
     host: process.env.DEV_DB_HOST || "localhost",
     port: process.env.DEV_DB_PORT || 27017,
-    name: process.env.DEV_DB_NAME || "ProjectManager",
+    name: process.env.DEV_DB_NAME || "UserService",
   },
 };
+
 const pro = {
   app: {
-    port: process.env.PRO_APP_PORT || 3000,
+    port: process.env.PRO_APP_PORT || 8000,
   },
   db: {
     host: process.env.PRO_DB_HOST || "localhost",
     port: process.env.PRO_DB_PORT || 27107,
-    name: process.env.PRO_DB_NAME || "ProjectManagerPro",
+    name: process.env.PRO_DB_NAME || "UserServicePro",
   },
 };
+
 const config = { dev, pro };
 const env = process.env.NODE_ENV || "dev";
 module.exports = config[env];

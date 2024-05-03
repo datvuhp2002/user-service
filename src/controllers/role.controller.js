@@ -13,9 +13,15 @@ class RoleController {
     }).send(res);
   };
   getAll = async (req, res, next) => {
-    new OK({
+    new SuccessResponse({
       message: "Get All Ok",
       data: await RoleService.getAll(),
+    }).send(res);
+  };
+  detail = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Get All Ok",
+      data: await RoleService.findById(req.body),
     }).send(res);
   };
 }
