@@ -10,6 +10,7 @@ const {
   AuthFailureError,
   ForbiddenError,
 } = require("../core/error.response");
+const cloudinary = require("../configs/cloudinary.config");
 class UserService {
   static select = {
     user_id: true,
@@ -190,6 +191,27 @@ class UserService {
   };
   // Cập nhật nhân viên
   static update = async ({ id, data }) => {
+    if (data.avatar) {
+      try {
+        return await prisma.user.update({
+          where: { user_id: id },
+          data,
+          select: this.select,
+        });
+      } catch (errr) {
+        cloudinary.uploader.destroy(data.avatar);
+        throw new BadRequestError(
+          "Cập nhật không thành công, vui lòng thử lại."
+        );
+      }
+    }
+    return await prisma.user.update({
+      where: { user_id: id },
+      data,
+      select: this.select,
+    });
+  };
+  static updateStaff = async ({ id, data }) => {
     return await prisma.user.update({
       where: { user_id: id },
       data,
@@ -216,6 +238,26 @@ class UserService {
         deletedMark: false,
       },
     });
+  };
+  static getAvatar = async (avatar) => {
+    // Return colors in the response
+    const options = {
+      height: 100,
+      width: 100,
+      format: "jpg",
+    };
+    try {
+      const result = await cloudinary.url(avatar, options);
+      console.log(result);
+      return result;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  static deleteAvatarInCloud = async (avatar, user_id) => {
+    // Return colors in the response
+    prisma.user.update({ where: { user_id }, data: { avatar: null } });
+    return await cloudinary.uploader.destroy(avatar);
   };
   // Tìm người dùng bằng email
   static findByEmail = async (email) => {

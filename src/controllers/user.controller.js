@@ -2,6 +2,10 @@
 
 const UserService = require("../services/user.service");
 const { OK, CREATED, SuccessResponse } = require("../core/success.response");
+const { uploadImageFromUrl } = require("../services/upload.services");
+const { BadRequestError } = require("../core/error.response");
+const cloudinary = require("../configs/cloudinary.config");
+const { getInfoData } = require("../utils/index");
 class UserController {
   create = async (req, res, next) => {
     console.log(req.headers.user);
@@ -82,7 +86,16 @@ class UserController {
   update = async (req, res, next) => {
     new SuccessResponse({
       message: "Cập nhật nhân viên thành công",
-      data: await UserService.update({ id: req.params.id, data: req.body }),
+      data: await UserService.update({ id: req.headers.user, data: req.body }),
+    }).send(res);
+  };
+  updateStaff = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Cập nhật nhân viên thành công",
+      data: await UserService.updateStaff({
+        id: req.params.id,
+        data: req.body,
+      }),
     }).send(res);
   };
   delete = async (req, res, next) => {
@@ -107,6 +120,50 @@ class UserController {
       data: await UserService.addUserIntoDepartment(
         req.query.ids,
         req.params.id,
+        req.headers.user
+      ),
+    }).send(res);
+  };
+  uploadAvatar = async (req, res, next) => {
+    const { file } = req;
+    if (!file) {
+      throw new BadRequestError("File is missing");
+    }
+    new SuccessResponse({
+      message: "Cập nhật avatar thành công",
+      data: await UserService.uploadAvatar(file, req.headers.user),
+    }).send(res);
+  };
+  uploadImageFromUrl = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Tải avatar thành công",
+      data: await uploadImageFromUrl(req.body, req.headers.user),
+    }).send(res);
+  };
+  uploadFileAvatarFromLocal = async (req, res, next) => {
+    const { file } = req;
+    if (!file) {
+      throw new BadRequestError("File is missing");
+    }
+    new SuccessResponse({
+      message: "Tải ảnh đại diện lên thành công",
+      data: getInfoData({
+        fields: ["path", "filename"],
+        object: file,
+      }),
+    }).send(res);
+  };
+  getAvatar = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Tải ảnh đại diện lên thành công",
+      data: await UserService.getAvatar(req.body.avatar),
+    }).send(res);
+  };
+  deleteAvatarInCloud = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Tải ảnh đại diện lên thành công",
+      data: await UserService.deleteAvatarInCloud(
+        req.body.avatar,
         req.headers.user
       ),
     }).send(res);
