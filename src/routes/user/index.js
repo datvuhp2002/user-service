@@ -12,7 +12,7 @@ router.get("/findByEmail/:email", asyncHandler(UserController.findByEmail));
 router.get("/admin/getAll", asyncHandler(UserController.getAll));
 // get all user in department
 router.get(
-  "/getAllStaffInDepartment/:id",
+  "/getAllStaffInDepartment",
   asyncHandler(UserController.getAllStaffInDepartment)
 );
 router.get(
@@ -23,6 +23,10 @@ router.get(
 router.get("/admin/trash", asyncHandler(UserController.trash));
 // Tạo ra một người dùng mới
 router.post("/admin/create", asyncHandler(UserController.create));
+router.post(
+  "/getAllStaffByUserProperty",
+  asyncHandler(UserController.getAllStaffByUserProperty)
+);
 // Upload Avatar
 router.post(
   "/uploadAvatarFromUrl",
@@ -62,5 +66,9 @@ router.put("/admin/restore/:id", asyncHandler(UserController.restore));
 router.get(
   "/addUserIntoDepartment/:id",
   asyncHandler(UserController.addUserIntoDepartment)
+);
+router.get(
+  "/removeStaffFromDepartment/:id",
+  asyncHandler(UserController.removeStaffFromDepartment)
 );
 module.exports = router;

@@ -5,6 +5,7 @@ const {
   AuthFailureError,
   ForbiddenError,
 } = require("../core/error.response");
+const { select } = require("./user.service");
 class UserPropertyService {
   static create = async ({ role_id, user_id, department_id }) => {
     console.log("Role id:::", role_id);
@@ -35,6 +36,20 @@ class UserPropertyService {
         createdAt: true,
       },
     });
+  };
+  static findUserByRole = async (role_id) => {
+    const users_id = await prisma.userProperty.findMany({
+      where: { role_id },
+      select: { user_id: true },
+    });
+    return users_id;
+  };
+  static findUserByRoleAndDepartment = async (role_id) => {
+    const users_id = await prisma.userProperty.findMany({
+      where: { role_id },
+      select: { user_id: true },
+    });
+    return users_id;
   };
 }
 module.exports = UserPropertyService;

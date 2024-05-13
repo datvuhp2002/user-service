@@ -14,6 +14,13 @@ class UserController {
       data: await UserService.create(req.body, req.headers.user),
     }).send(res);
   };
+  getAllStaffByUserProperty = async (req, res, next) => {
+    console.log(req.body);
+    new CREATED({
+      message: "Tạo nhân viên mới thành công",
+      data: await UserService.getAllStaffByUserProperty(req.body),
+    }).send(res);
+  };
   findByEmail = async (req, res, next) => {
     new SuccessResponse({
       message: "Tìm email thành công",
@@ -38,7 +45,7 @@ class UserController {
       message: "Lấy ra danh sách người dùng thành công",
       data: await UserService.getAllStaffInDepartment(
         req.query,
-        req.params.id,
+        req.body,
         req.headers.user
       ),
     }).send(res);
@@ -119,8 +126,16 @@ class UserController {
       message: "Thêm thành công nhân viên vào phòng ban",
       data: await UserService.addUserIntoDepartment(
         req.query.ids,
-        req.params.id,
-        req.headers.user
+        req.params.id
+      ),
+    }).send(res);
+  };
+  removeStaffFromDepartment = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Xoá thành công nhân viên ra khỏi phòng ban",
+      data: await UserService.removeStaffFromDepartment(
+        req.query.ids,
+        req.params.id
       ),
     }).send(res);
   };
