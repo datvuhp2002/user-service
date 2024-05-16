@@ -2,7 +2,6 @@
 const express = require("express");
 const UserController = require("../../controllers/user.controller");
 const asyncHandler = require("../../helpers/asyncHandler");
-const { uploadDisk } = require("../../configs/multer.config");
 const { upload } = require("../../middleware");
 const router = express.Router();
 
@@ -22,7 +21,7 @@ router.get(
 // Lấy ra hết tất cả user đã bị xoá
 router.get("/admin/trash", asyncHandler(UserController.trash));
 // Tạo ra một người dùng mới
-router.post("/admin/create", asyncHandler(UserController.create));
+router.post("/create", asyncHandler(UserController.create));
 router.post(
   "/getAllStaffByUserProperty",
   asyncHandler(UserController.getAllStaffByUserProperty)
@@ -43,11 +42,6 @@ router.post(
   asyncHandler(UserController.deleteAvatarInCloud)
 );
 
-// router.post(
-//   "/uploadMultipleAvatarFromLocal",
-//   upload.array("files", 3),
-//   asyncHandler(UserController.uploadMultipleAvatarFromLocal)
-// );
 // update account information
 router.put("/update", asyncHandler(UserController.update));
 
@@ -63,11 +57,11 @@ router.delete("/admin/delete/:id", asyncHandler(UserController.delete));
 // Khôi phục một người dùng đã bị xoá
 router.put("/admin/restore/:id", asyncHandler(UserController.restore));
 
-router.get(
+router.post(
   "/addUserIntoDepartment/:id",
   asyncHandler(UserController.addUserIntoDepartment)
 );
-router.get(
+router.post(
   "/removeStaffFromDepartment/:id",
   asyncHandler(UserController.removeStaffFromDepartment)
 );

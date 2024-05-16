@@ -25,9 +25,30 @@ class UserService {
     createdBy: true,
     UserProperty: true,
   };
-  // tạo ra một nhân viên mới
+  // find user by role
+  static findUserByRole = async (role) => {
+    const role_data = await RoleService.findByName(role);
+    if (!role_data) throw new BadRequestError("Role không tồn tại");
+    const users = await UserProperty.findUserByRole(role_data.role_id);
+    return users.map((user) => user.user_id);
+  };
+  // find user property by role
+  static findUserPropertyByRole = async (role) => {
+    const role_data = await RoleService.findByName(role);
+    if (!role_data) throw new BadRequestError("Role không tồn tại");
+    const users = await UserProperty.findUserByRole(role_data.role_id);
+    return users.map((user) => user.user_property_id);
+  };
+  // find user by email
+  static findByEmail = async (email) => {
+    return await prisma.user.findFirst({
+      where: { email },
+      include: { UserProperty: { include: { role: true } } },
+    });
+  };
+  // create new user
   static create = async (
-    { username, email, password, role, department_id },
+    { username, email, password, role_id, department_id },
     createdBy
   ) => {
     // check Email exists
@@ -46,37 +67,44 @@ class UserService {
       },
     });
     if (newUser) {
-      const role_data = await RoleService.findByName(role);
       const userProperty = await UserPropertyService.create({
-        role_id: role_data.role_id,
+        role_id,
         user_id: newUser.user_id,
         department_id,
       });
-      return {
-        code: 201,
-      };
+      if (userProperty) {
+        return {
+          code: 201,
+        };
+      } else {
+        await this.prisma.user.delete({ where: { user_id: newUser.user_id } });
+        return false;
+      }
     }
     return {
       code: 200,
       data: null,
     };
   };
-  static addUserIntoDepartment = async (listUserId, department_id) => {
-    listUserId = listUserId.split(",");
+  // add user into department
+  static addUserIntoDepartment = async ({ list_user_ids }, department_id) => {
     return await prisma.userProperty.updateMany({
       where: {
-        OR: listUserId.map((user_id) => ({ user_id: user_id })),
+        OR: list_user_ids.map((user_id) => ({ user_id: user_id })),
       },
       data: {
         department_id,
       },
     });
   };
-  static removeStaffFromDepartment = async (listUserId, department_id) => {
-    listUserId = listUserId.split(",");
+  // remove user out of department
+  static removeStaffFromDepartment = async (
+    { list_user_ids },
+    department_id
+  ) => {
     return await prisma.userProperty.updateMany({
       where: {
-        OR: listUserId.map((user_id) => ({ user_id: user_id })),
+        OR: list_user_ids.map((user_id) => ({ user_id: user_id })),
       },
       data: {
         department_id: null,
@@ -156,29 +184,42 @@ class UserService {
       previousPage,
     });
   };
-  static getAllStaffByUserProperty = async (user_property_ids) => {
+  // get all staff by user properties
+  static getAllStaffByUserProperty = async (
+    { items_per_page, page, search, nextPage, previousPage, role = null },
+    { user_property_ids }
+  ) => {
     console.log(user_property_ids);
     let query = [];
-    query.push({
-      UserProperty: {
-        user_property_id: {
-          in: user_property_ids,
+    if (role) {
+      const listUserPropertyByRole = await this.findUserPropertyByRole(role);
+      const commonElements = listUserPropertyByRole.filter((element) =>
+        user_property_ids.includes(element)
+      );
+      query.push({
+        user_id: {
+          in: commonElements,
         },
-      },
-    });
-    console.log({
-      UserProperty: {
-        user_property_id: {
-          in: user_property_ids,
+      });
+    } else {
+      query.push({
+        UserProperty: {
+          user_property_id: {
+            in: user_property_ids,
+          },
         },
-      },
-    });
+      });
+    }
     query.push({
       deletedMark: false,
     });
     return await this.queryUser({
       query: query,
-      getAll: true,
+      items_per_page,
+      page,
+      search,
+      nextPage,
+      previousPage,
     });
   };
   // get all staffs
@@ -192,11 +233,9 @@ class UserService {
   }) => {
     let query = [];
     if (role) {
-      const role_data = await RoleService.findByName(role);
-      const users = await UserProperty.findUserByRole(role_data.role_id);
       query.push({
         user_id: {
-          in: users.map((user) => user.user_id),
+          in: await this.findUserByRole(role),
         },
       });
     }
@@ -219,12 +258,19 @@ class UserService {
     search,
     nextPage,
     previousPage,
+    role = null,
   }) => {
-    const query = [
-      {
-        deletedMark: true,
-      },
-    ];
+    let query = [];
+    if (role) {
+      query.push({
+        user_id: {
+          in: await this.findUserByRole(role),
+        },
+      });
+    }
+    query.push({
+      deletedMark: true,
+    });
     return await this.queryUser({
       query: query,
       items_per_page,
@@ -241,6 +287,7 @@ class UserService {
       select: this.select,
     });
   };
+  // user information
   static detailUser = async (id) => {
     return await prisma.user.findUnique({
       where: { user_id: id },
@@ -254,7 +301,7 @@ class UserService {
       select: this.select,
     });
   };
-  // Cập nhật nhân viên
+  // update user information
   static update = async ({ id, data }) => {
     if (data.avatar) {
       try {
@@ -276,16 +323,9 @@ class UserService {
       select: this.select,
     });
   };
-  static updateStaff = async ({ id, data }) => {
-    return await prisma.user.update({
-      where: { user_id: id },
-      data,
-      select: this.select,
-    });
-  };
-  // Xoá nhân viên
+  // delete user account
   static delete = async (user_id) => {
-    return await prisma.user.update({
+    const deleteUser = await prisma.user.update({
       where: { user_id },
       select: this.select,
       data: {
@@ -293,18 +333,32 @@ class UserService {
         deletedAt: new Date(),
       },
     });
+    if (deleteUser) {
+      const deleteUserProperty = await UserPropertyService.delete(user_id);
+      if (deleteUserProperty) return true;
+      await this.restore(user_id);
+    }
+    await this.restore(user_id);
+    return null;
   };
-  // Khôi phục lại nhân viên
+  // restore user account
   static restore = async (user_id) => {
-    return await prisma.user.update({
+    const restoreUser = await prisma.user.update({
       where: { user_id },
       select: this.select,
       data: {
         deletedMark: false,
       },
     });
+    if (restoreUser) {
+      const restoreUserProperty = await UserPropertyService.restore(user_id);
+      if (restoreUserProperty) return true;
+      await this.delete(user_id);
+    }
+    await this.delete(user_id);
+    return null;
   };
-  // get Avatar by public id
+  // get avatar by public id
   static getAvatar = async (avatar) => {
     // Return colors in the response
     const options = {
@@ -325,13 +379,6 @@ class UserService {
     prisma.user.update({ where: { user_id }, data: { avatar: null } });
     return await cloudinary.uploader.destroy(avatar);
   };
-  // Tìm người dùng bằng email
-  static findByEmail = async (email) => {
-    return await prisma.user.findFirst({
-      where: { email },
-      include: { UserProperty: { include: { role: true } } },
-    });
-  };
   static queryUser = async ({
     query,
     items_per_page,
@@ -339,10 +386,7 @@ class UserService {
     search,
     nextPage,
     previousPage,
-    getAll,
   }) => {
-    let itemsPerPage = Number(items_per_page) || 10;
-    const currentPage = Number(page) || 1;
     const searchKeyword = search || "";
     let whereClause = {
       OR: [
@@ -364,9 +408,14 @@ class UserService {
     const total = await prisma.user.count({
       where: whereClause,
     });
-    if (getAll) itemsPerPage = total;
+    let itemsPerPage;
+    if (items_per_page !== "ALL") {
+      itemsPerPage = Number(items_per_page) || 10;
+    } else {
+      itemsPerPage = total;
+    }
+    const currentPage = Number(page) || 1;
     const skip = currentPage > 1 ? (currentPage - 1) * itemsPerPage : 0;
-
     const users = await prisma.user.findMany({
       take: itemsPerPage,
       skip,
@@ -376,11 +425,9 @@ class UserService {
         createdAt: "desc",
       },
     });
-
     const lastPage = Math.ceil(total / itemsPerPage);
     const nextPageNumber = currentPage + 1 > lastPage ? null : currentPage + 1;
     const previousPageNumber = currentPage - 1 < 1 ? null : currentPage - 1;
-
     return {
       users: users,
       total,

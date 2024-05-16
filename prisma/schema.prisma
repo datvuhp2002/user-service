@@ -48,10 +48,14 @@ model Role {
 }
 
 model UserProperty {
-  user_property_id String  @id @default(auto()) @map("_id") @db.ObjectId
-  author           User    @relation(fields: [user_id], references: [user_id]) // Chỉ định User là one-to-one
-  user_id          String  @unique @db.ObjectId
-  role             Role    @relation(fields: [role_id], references: [role_id])
-  role_id          String  @db.ObjectId
-  department_id    String? @db.ObjectId
+  user_property_id String    @id @default(auto()) @map("_id") @db.ObjectId
+  author           User      @relation(fields: [user_id], references: [user_id]) // Chỉ định User là one-to-one
+  user_id          String    @unique @db.ObjectId
+  role             Role      @relation(fields: [role_id], references: [role_id])
+  role_id          String    @db.ObjectId
+  department_id    String?   @db.ObjectId
+  createdAt        DateTime? @default(now())
+  updatedAt        DateTime? @updatedAt
+  deletedAt        DateTime?
+  deletedMark      Boolean   @default(false)
 }

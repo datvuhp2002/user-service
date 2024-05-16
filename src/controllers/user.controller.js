@@ -14,13 +14,6 @@ class UserController {
       data: await UserService.create(req.body, req.headers.user),
     }).send(res);
   };
-  getAllStaffByUserProperty = async (req, res, next) => {
-    console.log(req.body);
-    new CREATED({
-      message: "Tạo nhân viên mới thành công",
-      data: await UserService.getAllStaffByUserProperty(req.body),
-    }).send(res);
-  };
   findByEmail = async (req, res, next) => {
     new SuccessResponse({
       message: "Tìm email thành công",
@@ -33,7 +26,15 @@ class UserController {
    * @param {search}
    * @param {nextPage}
    * @param {previousPage}
+   * @param {role}
    */
+  getAllStaffByUserProperty = async (req, res, next) => {
+    console.log(req.body);
+    new CREATED({
+      message: "Lấy tất cả nhân viên trong phòng ban thành công",
+      data: await UserService.getAllStaffByUserProperty(req.query, req.body),
+    }).send(res);
+  };
   getAll = async (req, res, next) => {
     new SuccessResponse({
       message: "Lấy ra danh sách người dùng thành công",
@@ -99,7 +100,7 @@ class UserController {
   updateStaff = async (req, res, next) => {
     new SuccessResponse({
       message: "Cập nhật nhân viên thành công",
-      data: await UserService.updateStaff({
+      data: await UserService.update({
         id: req.params.id,
         data: req.body,
       }),
@@ -124,17 +125,14 @@ class UserController {
   addUserIntoDepartment = async (req, res, next) => {
     new SuccessResponse({
       message: "Thêm thành công nhân viên vào phòng ban",
-      data: await UserService.addUserIntoDepartment(
-        req.query.ids,
-        req.params.id
-      ),
+      data: await UserService.addUserIntoDepartment(req.body, req.params.id),
     }).send(res);
   };
   removeStaffFromDepartment = async (req, res, next) => {
     new SuccessResponse({
       message: "Xoá thành công nhân viên ra khỏi phòng ban",
       data: await UserService.removeStaffFromDepartment(
-        req.query.ids,
+        req.body,
         req.params.id
       ),
     }).send(res);
