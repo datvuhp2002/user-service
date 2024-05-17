@@ -5,11 +5,13 @@ const prisma = require("../prisma");
 const RoleService = require("./role.service");
 const UserProperty = require("./user.property.service");
 const UserPropertyService = require("./user.property.service");
+const { sendEmailToken } = require("./email.service");
 const bcrypt = require("bcrypt");
 const {
   BadRequestError,
   AuthFailureError,
   ForbiddenError,
+  NotFoundError,
 } = require("../core/error.response");
 const cloudinary = require("../configs/cloudinary.config");
 class UserService {
@@ -24,27 +26,6 @@ class UserService {
     createdAt: true,
     createdBy: true,
     UserProperty: true,
-  };
-  // find user by role
-  static findUserByRole = async (role) => {
-    const role_data = await RoleService.findByName(role);
-    if (!role_data) throw new BadRequestError("Role không tồn tại");
-    const users = await UserProperty.findUserByRole(role_data.role_id);
-    return users.map((user) => user.user_id);
-  };
-  // find user property by role
-  static findUserPropertyByRole = async (role) => {
-    const role_data = await RoleService.findByName(role);
-    if (!role_data) throw new BadRequestError("Role không tồn tại");
-    const users = await UserProperty.findUserByRole(role_data.role_id);
-    return users.map((user) => user.user_property_id);
-  };
-  // find user by email
-  static findByEmail = async (email) => {
-    return await prisma.user.findFirst({
-      where: { email },
-      include: { UserProperty: { include: { role: true } } },
-    });
   };
   // create new user
   static create = async (
@@ -86,6 +67,47 @@ class UserService {
       data: null,
     };
   };
+  static forgetPassword = async ({ email = null, captcha = null }) => {
+    const holderUser = await prisma.user.findFirst({ where: { email } });
+    if (!holderUser) {
+      throw new NotFoundError("User not found");
+    }
+    // send mail
+    const result = await sendEmailToken({ email });
+    if (result) return true;
+    throw new BadRequestError("Hệ thống lỗi, vui lòng thử lại");
+  };
+  static changePassword = async ({ password, email }) => {
+    const passwordHash = await bcrypt.hash(password, 10);
+    const changePassword = await prisma.user.update({
+      where: { email },
+      data: { password: passwordHash },
+    });
+    if (changePassword) return true;
+    throw new BadRequestError("Đã sảy ra lỗ i, vui lòng thử lại");
+  };
+  // find user by role
+  static findUserByRole = async (role) => {
+    const role_data = await RoleService.findByName(role);
+    if (!role_data) throw new BadRequestError("Role không tồn tại");
+    const users = await UserProperty.findUserByRole(role_data.role_id);
+    return users.map((user) => user.user_id);
+  };
+  // find user property by role
+  static findUserPropertyByRole = async (role) => {
+    const role_data = await RoleService.findByName(role);
+    if (!role_data) throw new BadRequestError("Role không tồn tại");
+    const users = await UserProperty.findUserByRole(role_data.role_id);
+    return users.map((user) => user.user_property_id);
+  };
+  // find user by email
+  static findByEmail = async (email) => {
+    return await prisma.user.findFirst({
+      where: { email },
+      include: { UserProperty: { include: { role: true } } },
+    });
+  };
+
   // add user into department
   static addUserIntoDepartment = async ({ list_user_ids }, department_id) => {
     return await prisma.userProperty.updateMany({

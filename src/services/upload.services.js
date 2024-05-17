@@ -13,7 +13,6 @@ const uploadImageFromUrl = async ({ urlImage }, userId) => {
     const result = await cloudinary.uploader.upload(urlImage, {
       folder: folderName,
     });
-    console.log(result);
     return result;
   } catch (err) {
     console.log(err);

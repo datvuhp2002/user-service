@@ -7,8 +7,19 @@ const { BadRequestError } = require("../core/error.response");
 const cloudinary = require("../configs/cloudinary.config");
 const { getInfoData } = require("../utils/index");
 class UserController {
+  forgetPassword = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Vui lòng kiểm tra email của bạn",
+      data: await UserService.forgetPassword({ email: req.body.email }),
+    }).send(res);
+  };
+  changePassword = async (req, res, next) => {
+    new SuccessResponse({
+      message: "Thay đổi mật khẩu thành công",
+      data: await UserService.changePassword(req.body),
+    }).send(res);
+  };
   create = async (req, res, next) => {
-    console.log(req.headers.user);
     new CREATED({
       message: "Tạo nhân viên mới thành công",
       data: await UserService.create(req.body, req.headers.user),

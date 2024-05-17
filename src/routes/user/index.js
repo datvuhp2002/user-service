@@ -5,6 +5,9 @@ const asyncHandler = require("../../helpers/asyncHandler");
 const { upload } = require("../../middleware");
 const router = express.Router();
 
+router.post("/forget-password", asyncHandler(UserController.forgetPassword));
+router.put("/change-password", asyncHandler(UserController.changePassword));
+
 // Tìm người dùng bằng email
 router.get("/findByEmail/:email", asyncHandler(UserController.findByEmail));
 // Lấy ra hết tất cả user
